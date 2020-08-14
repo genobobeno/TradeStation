@@ -1,28 +1,25 @@
 
+
 source("Initialize.R")
-##### Plot Pricing
-
-price1<-readRDS("Week1.rds")
-price2<-readRDS("Week2.rds")
-price3<-readRDS("Week3.rds")
-price4<-readRDS("Week4.rds")
-price5<-readRDS("Week5.rds")
-
-t.Start<-Sys.time()-24*14.5*3600
-t.Stop<-Sys.time()-24*7.5*3600
-CheckTimeTicks(t.start = t.Start,t.stop = t.Stop)
-df.Price<-GetAllPrices(t.start = t.Start,t.stop = t.Stop, Minutes = 15)
-
-price15<-CombinePriceData(price1,price2)
-price15<-CombinePriceData(price15,price3)
-price15<-CombinePriceData(price15,price4)
-price15<-CombinePriceData(price15,price5)
-price15<-ProcessPriceData(price15)
-Training<-CombineModelData(price = price15)
-
+Training<-readRDS("TrainingData5Weeks.rds")
 cor(Training[,names(Training)[sapply(Training,is.numeric)]],use="p")
-# saveRDS(df.Price,"NiceMorning.rds")
-df.Train<-HighCorrDrop(ModelData = Training[,!names(Training) %in% c("Move1","Move2","Move4")])
+
+BuildModelDataSet<-function(objList) {
+  # price1<-readRDS("Week1.rds")
+  # price2<-readRDS("Week2.rds")
+  # price3<-readRDS("Week3.rds")
+  # price4<-readRDS("Week4.rds")
+  # price5<-readRDS("Week5.rds")
+  # 
+  price15<-CombinePriceData(price1,price2)
+  price15<-CombinePriceData(price15,price3)
+  price15<-CombinePriceData(price15,price4)
+  price15f<-CombinePriceData(price15,price5)
+  price15p<-ProcessPriceData(price15f)
+  Training<-CombineModelData(price = price15p)
+  saveRDS(Training,"TrainingData5Weeks.rds")
+  readRDS("TrainingData5Weeks.rds")
+}
 
 QuantAnalysis<-function(x.price,after=50) {
   library(Hmisc)
@@ -67,7 +64,6 @@ QuantAnalysis<-function(x.price,after=50) {
   return(list(Models=list(Move1=Model1,Move2=Model2,Move3=Model3),Num.Fits=f.n,Cat.Fits=f.c,Stats=stats,TrendStates=list(Move1=TS1,Move2=TS2,Move3=TS3)))
 }
 
-Training<-CombineModelData(price15)
 df.Train.M3<-HighCorrDrop(ModelData = Training[,!names(Training) %in% c("Move1","Move2","Move4")])
 df1<-df.Train.M3
 df1$emacross<-factor(df1$emacross)
@@ -79,10 +75,12 @@ df1$LegBase<-factor(df1$LegBase)
 df1$TrendUp<-factor(df1$TrendUp)
 df1$TrendDown<-factor(df1$TrendDown)
 paste(names(df1),sep="",collapse="+")
-Model.M3<-lm(Move3~TickVolume+TrendState+LegBase*NLegBase+adx8+atr14+d2adx+d2ema+dema8+d3cci13+d3ccrs+HighSqueeze+LowSqueeze+TrendUp+LowWick+HighWick+d8Vol+emacross+m13dema,data=df1)
+cor(df1[,names(df1)[sapply(df1,is.numeric)]],use="p")
+#Model.M3<-lm(Move3~TickVolume+TrendState+LegBase*NLegBase+adx8+atr14+d2adx+d2ema+dema8+d3cci13+d3ccrs+HighSqueeze+LowSqueeze+TrendUp+LowWick+HighWick+d8Vol+emacross+m13dema,data=df1)
+Model.M3<-lm(Move3~TickVolume+TrendState+TrendStateP1+LegBase*NLegBase+HighSqueeze+LowSqueeze+TrendDown+emacross+lr310+lr310ma+d2ema+dema8+d2ccrs+LowWick+HighWick+d8Vol,data=df1) 
 summary(Model.M3)
 AIC(Model.M3)
-
+AIC(readRDS("GLM_M3a.rds"))
 
 df.Train.M2<-HighCorrDrop(ModelData = Training[,!names(Training) %in% c("Move1","Move3","Move4")],target="Move2")
 df1<-df.Train.M2
