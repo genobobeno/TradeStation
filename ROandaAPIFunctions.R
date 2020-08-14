@@ -347,17 +347,6 @@ AccountOrders  <- function(AccountType,AccountID,Token,Instrument,ApiVersion="v2
   # -- ----------------------------------------------------------------------------- Test Code -- #
   # -- ------------------------------------------------------------------------------------------ #
   
-  # p1_AccountType <- "practice"
-  # p2_Token <- OA_Ak
-  # p3_Instrument  <- "EUR_USD"
-  # p4_AccountID   <- "101-004-2221697-001"
-  # p5_ApiVersion  <- "v1"
-  # oa_orders <- AccountOrders(AccountType = p1_AccountType,
-  #                            Token = p2_Token,
-  #                            Instrument = p3_Instrument,
-  #                            AccountID = p4_AccountID,
-  #                            ApiVersion = p5_ApiVersion)
-  
 }
 
 # -- ----------------------------------------------------------------------------------------- -- #
