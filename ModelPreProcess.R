@@ -1,3 +1,32 @@
+CreateCutPoints<-function(PriceList,Model,PCut=c(50,75,100,125,150,175,200,225,250)/10) {
+  CUTS<-list()
+  for (pair in PAIRS) {
+    cat(pair,";")
+    Moves<-c()
+    for (w in 1:6) {
+      JW<-CleanOpen(PriceList[[paste0("W",w)]][[pair]])
+      JW<-LabelUpDown(price=JW,multiple.pairs = FALSE)
+      JW<-LegBaseCount(price=JW)
+      JW<-BuildHistory(price=JW)
+      JW<-AppendIndicators(price=JW)
+      JW<-AppendFeatures(price=JW)
+      JW$TrendState<-factor(JW$TrendState)
+      JW$LegBase<-factor(JW$LegBase)
+      JW$UpDown<-factor(JW$UpDown)
+      JW$Formation<-factor(JW$Formation)
+      JW$RallyDropBase<-factor(JW$RallyDropBase)
+      mult<-ifelse(JW$Close[1]/10>1,100,10000)
+      if (grepl("lm",Model$call)) {
+        Moves<-c(Moves,predict(Model,newdata = JW))
+      } else if (grepl("gbm",Model$call)) {
+        Moves<-c(Moves,predict(Model,newdata = JW,n.trees = 100,type="response"))
+      } 
+    }
+    CUTS[[pair]]<-quantile(Moves,probs = sort(c(0+PCut/100,1-PCut/100)),na.rm = T)
+  }
+  CUTS
+}
+
 
 HighCorrDrop<-function(ModelData,r.max = 0.54773, target="Move3",rowLimit=10000) {
   # ModelData<-Training[,!names(Training) %in% c("Move1","Move2","Move4")];r.max = 0.54773; target="target";rowLimit=10000

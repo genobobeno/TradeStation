@@ -1,4 +1,4 @@
-AllPairsPriceHistory<-function(TimeInSeconds=600,Seconds=15,Minutes=NA,Hours=NA) {
+AllPairsPriceHistory<-function(TimeInSeconds=600,Seconds=15,Minutes=NA,Hours=NA,Daily=FALSE,Weekly=FALSE,Monthly=FALSE) {
   # -- character ---- # Your Account Type "practice" or "live"
   OA_At <- "practice"  
   # Your Account ID and Token
@@ -27,6 +27,12 @@ AllPairsPriceHistory<-function(TimeInSeconds=600,Seconds=15,Minutes=NA,Hours=NA)
       print("Pick a Valid Hours Time value: 1, 2, 3, 4, 6, 8, 12")
       return(NULL)
     }
+  } else if (Daily) {
+    OA_Gn <- "D"
+  } else if (Weekly) {
+    OA_Gn <- "W"
+  } else if (Monthly) {
+    OA_Gn <- "M"
   } else {
     print("Pick a valid time frame")
     return(NULL)
@@ -51,6 +57,9 @@ AllPairsPriceHistory<-function(TimeInSeconds=600,Seconds=15,Minutes=NA,Hours=NA)
     OA_In <- p
     Prices[[p]]<-HisPrices(Account=OA_Ai, AccountType=OA_At,Granularity=OA_Gn,DayAlign=OA_Da,Token=OA_Ak,
                       Instrument=OA_In,Start=OA_F1Px,End=OA_F2Px,Count = NULL, TimeAlign=OA_Ta)
+    if (grepl("4",t.adj)) Prices[[p]]$TimeStamp<-Prices[[p]]$TimeStamp+3600
+    
+    Prices[[p]][,4:7]<-as.numeric(Prices[[p]][,4:7])
   }
   Prices
 }
@@ -104,8 +113,11 @@ CheckTimeTicks<-function(t.start,t.stop) {
   return(TRUE)
 }
 
-GetAllPrices<-function(Seconds=NA,Minutes=1,Hours=NA,LookBackHours=NA,t.start=NA,t.stop=NA) {
-  stopifnot(is.na(LookBackHours)|(is.na(t.start)&is.na(t.stop)))
+GetAllPrices<-function(Seconds=NA,Minutes=NA,Hours=NA,Days=NA,Weeks=NA,Months=NA,
+                       LookBackHours=NA,t.start=NA,t.stop=NA,candle.complete=FALSE) {
+  stopifnot(((is.na(LookBackHours)|(is.na(t.start)&is.na(t.stop))) &
+              (!is.na(Seconds) | !is.na(Minutes) | !is.na(Hours))) |
+              (!is.na(Days)|!is.na(Weeks)|!is.na(Months)))
   # Hours=1
   # -- character ---- # Your Account Type "practice" or "live"
   OA_At <- "practice"  
@@ -135,14 +147,20 @@ GetAllPrices<-function(Seconds=NA,Minutes=1,Hours=NA,LookBackHours=NA,t.start=NA
       print("Pick a Valid Hours Time value: 1, 2, 3, 4, 6, 8, 12")
       return(NULL)
     }
+  } else if (!is.na(Days)) {
+    OA_Gn <- "D"
+  } else if (!is.na(Weeks)) {
+    OA_Gn <- "W"
+  } else if (!is.na(Months)) {
+    OA_Gn <- "M"
   } else {
     print("Pick a valid time frame")
     return(NULL)
   }
   
   # start and stop
-  t.adj<-ifelse(round(as.numeric(`attr<-`(Sys.time(),"tzone","GMT") - 
-                                   as.POSIXct(format(Sys.time()),tz="GMT")))==4,"-04:00","-05:00") 
+  t.adj<-ifelse(round(as.numeric(`attr<-`(Sys.time(),"tzone","GMT") -
+                                   as.POSIXct(format(Sys.time()),tz="GMT")))==4,"-04:00","-05:00")
   if (!is.na(LookBackHours)) {
     OA_F1Px<-str_replace(paste0(as.character(Sys.time()-3600*LookBackHours),t.adj)," ","T")
     OA_F2Px<-str_replace(paste0(as.character(Sys.time()),t.adj)," ","T")
@@ -154,6 +172,16 @@ GetAllPrices<-function(Seconds=NA,Minutes=1,Hours=NA,LookBackHours=NA,t.start=NA
       print("Your start and stop timing isn't properly entered.")
       return(NULL)
     }
+  } else if (!is.na(Days)|!is.na(Weeks)|!is.na(Months)) {
+    if (!is.na(Days)) {
+      TMult<-3600*24*Days
+    } else if (!is.na(Weeks)) {
+      TMult<-3600*24*7*Weeks
+    } else if (!is.na(Months)) {
+      TMult<-3600*24*30*Months
+    } else {print("Something weird going on with your Days, Weeks, or Months selection")}
+    OA_F1Px<-str_replace(paste0(as.character(Sys.time()-TMult),t.adj)," ","T")
+    OA_F2Px<-str_replace(paste0(as.character(Sys.time()),t.adj)," ","T")
   } else {
     print("Your start, stop, or lookback timing isn't properly entered.")
     return(NULL)
@@ -173,17 +201,26 @@ GetAllPrices<-function(Seconds=NA,Minutes=1,Hours=NA,LookBackHours=NA,t.start=NA
     OA_In <- p
     PRICES<-HisPrices(Account=OA_Ai, AccountType=OA_At,Granularity=OA_Gn,DayAlign=OA_Da,Token=OA_Ak,
                       Instrument=OA_In,Start=OA_F1Px,End=OA_F2Px,Count = NULL, TimeAlign=OA_Ta)
+    if (grepl("4",t.adj)) PRICES$TimeStamp<-PRICES$TimeStamp+3600
     Changes[[p]]<-data.frame(TimeStamp=PRICES$TimeStamp[-1],
                              change=diff(as.numeric(PRICES$Close))/as.numeric(PRICES$Close[-length(PRICES$Close)]))
     colnames(Changes[[p]])[2]<-p
     #Changes[[p]]<-diff(as.numeric(PRICES$Close))/as.numeric(PRICES$Close[-length(PRICES$Close)])
-    Prices[[p]]<-PRICES
+    if (candle.complete) {
+      Prices[[p]]<-PRICES[PRICES$Complete,]
+    } else {
+      Prices[[p]]<-PRICES
+    }
   }
   Prices
 }
 
 
-GetPairPrices<-function(Pair,Seconds=NA,Minutes=1,Hours=NA,LookBackHours=NA,t.start=NA,t.stop=NA) {
+GetPairPrices<-function(Pair,Seconds=NA,Minutes=NA,Hours=NA,
+                        Daily=FALSE,Weekly=FALSE,Monthly=FALSE,
+                        LookBackHours=NA,t.start=NA,t.stop=NA) {
+  #Pair="EUR_CAD";Seconds=NA;Minutes=NA;Hours=4;Daily=FALSE;Weekly=FALSE;Monthly=FALSE;LookBackHours=NA
+  #t.start=t.Start;t.stop=t.Stop
   stopifnot(is.na(LookBackHours)|(is.na(t.start)&is.na(t.stop)))
   # Hours=1
   # -- character ---- # Your Account Type "practice" or "live"
@@ -214,7 +251,13 @@ GetPairPrices<-function(Pair,Seconds=NA,Minutes=1,Hours=NA,LookBackHours=NA,t.st
       print("Pick a Valid Hours Time value: 1, 2, 3, 4, 6, 8, 12")
       return(NULL)
     }
-  } else {
+  } else if (Daily) {
+    OA_Gn <- "D"
+  } else if (Weekly) {
+    OA_Gn <- "W"
+  } else if (Monthly) {
+    OA_Gn <- "M"
+  }  else {
     print("Pick a valid time frame")
     return(NULL)
   }
@@ -250,6 +293,8 @@ GetPairPrices<-function(Pair,Seconds=NA,Minutes=1,Hours=NA,LookBackHours=NA,t.st
     OA_In <- Pair
     PRICES<-HisPrices(Account=OA_Ai, AccountType=OA_At,Granularity=OA_Gn,DayAlign=OA_Da,Token=OA_Ak,
                       Instrument=OA_In,Start=OA_F1Px,End=OA_F2Px,Count = NULL, TimeAlign=OA_Ta)
+    if (grepl("4",t.adj)) PRICES$TimeStamp<-PRICES$TimeStamp+3600
+    
     # Changes[[p]]<-data.frame(TimeStamp=PRICES$TimeStamp[-1],
     #                          change=diff(as.numeric(PRICES$Close))/as.numeric(PRICES$Close[-length(PRICES$Close)]))
     # colnames(Changes[[p]])[2]<-p
@@ -298,6 +343,8 @@ CollectData<-function(t.start=NA,t.stop=NA) {
         OA_In <- p
         PRICES<-HisPrices(Account=OA_Ai, AccountType=OA_At,Granularity=OA_Gn,DayAlign=OA_Da,Token=OA_Ak,
                           Instrument=OA_In,Start=OA_F1Px,End=OA_F2Px,Count = NULL, TimeAlign=OA_Ta)
+        if (grepl("4",t.adj)) PRICES$TimeStamp<-PRICES$TimeStamp+3600
+        
         Changes[[p]]<-data.frame(TimeStamp=PRICES$TimeStamp[-1],
                                  change=diff(as.numeric(PRICES$Close))/as.numeric(PRICES$Close[-length(PRICES$Close)]))
         colnames(Changes[[p]])[2]<-p

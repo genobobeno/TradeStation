@@ -13,4 +13,12 @@ RBindPriceData<-function(curr.price,prev.price) {
   curr.price
 }
 
-
+LabelThings<-function(raw.price.data) {
+  PX<-CleanOpen(raw.price.data)
+  cat("\nCleaned")
+  PX<-LabelUpDown(price=PX,multiple.pairs = FALSE)
+  cat(" : Labeled")
+  PX<-LegBaseCount(price=PX)
+  cat(" : TrendStates")
+  PX
+}

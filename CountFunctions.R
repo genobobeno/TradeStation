@@ -1,3 +1,8 @@
+UpDown<-function(v,lim) {
+  if (class(v)=="character") return(2*(v=="Up")+(-1))
+  if (class(v)=="numeric") return(2*(v>lim)+(-1))
+}
+
 LabelUpDown<-function(price,multiple.pairs=TRUE) {
   #cat("If you give this a {df,list}, it {won't,will} loop over pairs.")
   if (class(price)=="list") {
@@ -52,6 +57,7 @@ LabelUpDown<-function(price,multiple.pairs=TRUE) {
               price[[pair]]$Setup[i]<-TRUE
               price[[pair]]$AB[i]<-ifelse(price[[pair]]$ActionHigh[i]<price[[pair]]$AnchorHigh[i],FALSE,TRUE)
               price[[pair]]$TrendState[i]<-paste0("DTS",ifelse(price[[pair]]$AB[i],"AB",""))
+              if (price[[pair]]$TrendState[i]=="DTSAB") price[[pair]]$Direction[i]<-"Up"
             } else {
               price[[pair]]$Direction[i]<-"Up"
               price[[pair]]$Setup[i]<-FALSE
@@ -90,6 +96,7 @@ LabelUpDown<-function(price,multiple.pairs=TRUE) {
               price[[pair]]$Setup[i]<-TRUE
               price[[pair]]$AB[i]<-ifelse(price[[pair]]$ActionLow[i]>price[[pair]]$AnchorLow[i],FALSE,TRUE)
               price[[pair]]$TrendState[i]<-paste0("UTS",ifelse(price[[pair]]$AB[i],"AB",""))
+              if (price[[pair]]$TrendState[i]=="UTSAB") price[[pair]]$Direction[i]<-"Down"
             } else {
               price[[pair]]$Direction[i]<-"Down"
               price[[pair]]$Setup[i]<-FALSE
@@ -128,6 +135,7 @@ LabelUpDown<-function(price,multiple.pairs=TRUE) {
               price[[pair]]$Setup[i]<-TRUE
               price[[pair]]$AB[i]<-ifelse(price[[pair]]$ActionLow[i]>price[[pair]]$AnchorLow[i],FALSE,TRUE)
               price[[pair]]$TrendState[i]<-paste0("UTS",ifelse(price[[pair]]$AB[i],"AB",""))
+              if (price[[pair]]$TrendState[i]=="UTSAB") price[[pair]]$Direction[i]<-"Down"
             } else {
               price[[pair]]$Direction[i]<-"Down"
               price[[pair]]$Setup[i]<-FALSE
@@ -166,6 +174,7 @@ LabelUpDown<-function(price,multiple.pairs=TRUE) {
               price[[pair]]$Setup[i]<-TRUE
               price[[pair]]$AB[i]<-ifelse(price[[pair]]$ActionHigh[i]<price[[pair]]$AnchorHigh[i],FALSE,TRUE)
               price[[pair]]$TrendState[i]<-paste0("DTS",ifelse(price[[pair]]$AB[i],"AB",""))
+              if (price[[pair]]$TrendState[i]=="DTSAB") price[[pair]]$Direction[i]<-"Up"
             } else {
               price[[pair]]$Direction[i]<-"Up"
               price[[pair]]$Setup[i]<-FALSE
@@ -225,6 +234,7 @@ LabelUpDown<-function(price,multiple.pairs=TRUE) {
             price$Setup[i]<-TRUE
             price$AB[i]<-ifelse(price$ActionHigh[i]<price$AnchorHigh[i],FALSE,TRUE)
             price$TrendState[i]<-paste0("DTS",ifelse(price$AB[i],"AB",""))
+            if (price$TrendState[i]=="DTSAB") price$Direction[i]<-"Up"
           } else {
             price$Direction[i]<-"Up"
             price$Setup[i]<-FALSE
@@ -263,6 +273,7 @@ LabelUpDown<-function(price,multiple.pairs=TRUE) {
             price$Setup[i]<-TRUE
             price$AB[i]<-ifelse(price$ActionLow[i]>price$AnchorLow[i],FALSE,TRUE)
             price$TrendState[i]<-paste0("UTS",ifelse(price$AB[i],"AB",""))
+            if (price$TrendState[i]=="UTSAB") price$Direction[i]<-"Down"
           } else {
             price$Direction[i]<-"Down"
             price$Setup[i]<-FALSE
@@ -301,6 +312,7 @@ LabelUpDown<-function(price,multiple.pairs=TRUE) {
             price$Setup[i]<-TRUE
             price$AB[i]<-ifelse(price$ActionLow[i]>price$AnchorLow[i],FALSE,TRUE)
             price$TrendState[i]<-paste0("UTS",ifelse(price$AB[i],"AB",""))
+            if (price$TrendState[i]=="UTSAB") price$Direction[i]<-"Down"
           } else {
             price$Direction[i]<-"Down"
             price$Setup[i]<-FALSE
@@ -339,6 +351,7 @@ LabelUpDown<-function(price,multiple.pairs=TRUE) {
             price$Setup[i]<-TRUE
             price$AB[i]<-ifelse(price$ActionHigh[i]<price$AnchorHigh[i],FALSE,TRUE)
             price$TrendState[i]<-paste0("DTS",ifelse(price$AB[i],"AB",""))
+            if (price$TrendState[i]=="DTSAB") price$Direction[i]<-"Up"
           } else {
             price$Direction[i]<-"Up"
             price$Setup[i]<-FALSE
@@ -354,11 +367,6 @@ LabelUpDown<-function(price,multiple.pairs=TRUE) {
   price
 }
 
-UpDown<-function(v,lim) {
-  if (class(v)=="character") return(2*(v=="Up")+(-1))
-  if (class(v)=="numeric") return(2*(v>lim)+(-1))
-}
-
 LegBaseCount<-function(price) {
   if ((class(price)=="list" && !("UpDown" %in% names(price[[1]]))) |
       (class(price)=="data.frame" && !("UpDown" %in% names(price)))) {
@@ -366,9 +374,14 @@ LegBaseCount<-function(price) {
   }
   if (class(price)=="list") {
     for (pair in names(price)) {
+      mult<-ifelse(price[[pair]]$Close[1]/10>1,100,10000)
       price[[pair]]$BaseHigh<-price[[pair]]$BaseLow<-NA
       price[[pair]]$PrevBaseHigh<-price[[pair]]$PrevBaseLow<-NA
       price[[pair]]$LegBase<-NA
+      price[[pair]]$RallyDropBase<-NA
+      price[[pair]]$LegBaseRange<-NA
+      price[[pair]]$LegBaseRatio<-NA
+      price[[pair]]$Formation<-NA
       price[[pair]]$NLegBase<-NA
       price[[pair]]$BaseHigh[1]<-0;price[[pair]]$BaseLow[1]<-1000
       #price[[pair]]$PrevBaseHigh[1]<-0;price[[pair]]$PrevBaseLow[1]<-1000
@@ -380,8 +393,15 @@ LegBaseCount<-function(price) {
           price[[pair]]$LegBase[i]<-"Base"
           price[[pair]]$BaseHigh[i]<-max(price[[pair]]$BaseHigh[i-1],price[[pair]]$High[i],na.rm=T)
           price[[pair]]$BaseLow[i]<-min(price[[pair]]$BaseLow[i-1],price[[pair]]$Low[i],na.rm=T)
-          price[[pair]]$PrevBaseHigh[i]<-price[[pair]]$BaseHigh[i-1]
-          price[[pair]]$PrevBaseLow[i]<-price[[pair]]$BaseLow[i-1]
+          price[[pair]]$RallyDropBase[i]<-"Base"
+          price[[pair]]$LegBaseRange[i]<-mult*(price[[pair]]$BaseHigh[i] - price[[pair]]$BaseLow[i])
+          if (sum(price[[pair]]$LegBase[!is.na(price[[pair]]$LegBase)]=="Leg")>0) {
+            ind<-max(which(price[[pair]]$LegBase=="Leg"))
+            price[[pair]]$PrevBaseHigh[i]<-price[[pair]]$BaseHigh[ind]
+            price[[pair]]$PrevBaseLow[i]<-price[[pair]]$BaseLow[ind]
+            price[[pair]]$Formation[i]<-ifelse(price[[pair]]$UpDown[ind]=="Up","RallyBase","DropBase")
+            price[[pair]]$LegBaseRatio[i]<-mult*(price[[pair]]$High[i]-price[[pair]]$Low[i])/price[[pair]]$LegBaseRange[i]
+          } 
           if (is.na(price[[pair]]$LegBase[i-1])) {
             price[[pair]]$NLegBase[i]<-1
           } else {
@@ -392,16 +412,34 @@ LegBaseCount<-function(price) {
             price[[pair]]$LegBase[i]<-"Base"
             price[[pair]]$BaseHigh[i]<-max(price[[pair]]$BaseHigh[i-1],price[[pair]]$High[i],na.rm=T)
             price[[pair]]$BaseLow[i]<-min(price[[pair]]$BaseLow[i-1],price[[pair]]$Low[i],na.rm=T)
-            price[[pair]]$PrevBaseHigh[i]<-price[[pair]]$BaseHigh[i-1]
-            price[[pair]]$PrevBaseLow[i]<-price[[pair]]$BaseLow[i-1]
-            if (!is.na(price[[pair]]$LegBase[i-1])) {
-              price[[pair]]$NLegBase[i]<-1+ifelse(price[[pair]]$LegBase[i-1]=="Base",price[[pair]]$NLegBase[i-1],0)
+            price[[pair]]$RallyDropBase[i]<-"Base"
+            price[[pair]]$LegBaseRange[i]<-mult*(price[[pair]]$BaseHigh[i] - price[[pair]]$BaseLow[i])
+            if (sum(price[[pair]]$LegBase=="Leg",na.rm = T)>0) {
+              ind<-max(which(price[[pair]]$LegBase=="Leg"))
+              price[[pair]]$Formation[i]<-ifelse(price[[pair]]$UpDown[ind]=="Up","RallyBase","DropBase")
+              price[[pair]]$LegBaseRatio[i]<-mult*(price[[pair]]$High[i]-price[[pair]]$Low[i])/price[[pair]]$LegBaseRange[i]
+              price[[pair]]$PrevBaseHigh[i]<-price[[pair]]$BaseHigh[ind]
+              price[[pair]]$PrevBaseLow[i]<-price[[pair]]$BaseLow[ind]
             } 
+            price[[pair]]$NLegBase[i]<-1+price[[pair]]$NLegBase[i-1]
           } else {
             price[[pair]]$LegBase[i]<-"Leg"
             price[[pair]]$PrevBaseHigh[i]<-price[[pair]]$PrevBaseHigh[i-1]
             price[[pair]]$PrevBaseLow[i]<-price[[pair]]$PrevBaseLow[i-1]
-            price[[pair]]$BaseHigh[i]<-price[[pair]]$BaseLow[i]<-NA
+            price[[pair]]$RallyDropBase[i]<-ifelse(price[[pair]]$UpDown[i]=="Up","Rally","Drop")
+            if (!is.na(price[[pair]]$LegBase[i-1]) & price[[pair]]$LegBase[i-1]=="Leg" & 
+                price[[pair]]$UpDown[i-1]!=price[[pair]]$UpDown[i]) {
+              price[[pair]]$Formation[i]<-ifelse(price[[pair]]$UpDown[i]=="Up","ReversalUp","ReversalDown")
+              price[[pair]]$LegBaseRange[i]<-ifelse(price[[pair]]$UpDown[i]=="Up",mult*(min(price[[pair]]$Low[c(i,i-1)])-price[[pair]]$Open[i-1]),
+                                            mult*(max(price[[pair]]$High[c(i,i-1)])-price[[pair]]$Open[i-1]))
+              price[[pair]]$LegBaseRatio[i]<-mult*(price[[pair]]$High[i]-price[[pair]]$Low[i])/price[[pair]]$LegBaseRange[i]
+            } else if (sum(price[[pair]]$LegBase=="Base",na.rm = T)>0) {
+              ind<-max(which(price[[pair]]$LegBase=="Base"))
+              price[[pair]]$Formation[i]<-ifelse(!is.na(price[[pair]]$Formation[ind]),paste0(price[[pair]]$Formation[ind],price[[pair]]$RallyDropBase[i]),NA)
+              price[[pair]]$LegBaseRange[i]<-ifelse(price[[pair]]$UpDown[i]=="Up",mult*(price[[pair]]$High[i] - price[[pair]]$Low[ind+1]),
+                                            mult*(price[[pair]]$High[ind+1] - price[[pair]]$Low[i]))
+              price[[pair]]$LegBaseRatio[i]<-mult*(price[[pair]]$High[i]-price[[pair]]$Low[i])/price[[pair]]$LegBaseRange[i]
+            } 
             if (!is.na(price[[pair]]$LegBase[i-1])) {
               price[[pair]]$NLegBase[i]<-1+ifelse(price[[pair]]$LegBase[i-1]=="Leg",price[[pair]]$NLegBase[i-1],0)
             } 
@@ -410,7 +448,20 @@ LegBaseCount<-function(price) {
           price[[pair]]$LegBase[i]<-"Leg"
           price[[pair]]$PrevBaseHigh[i]<-price[[pair]]$PrevBaseHigh[i-1]
           price[[pair]]$PrevBaseLow[i]<-price[[pair]]$PrevBaseLow[i-1]
-          price[[pair]]$BaseHigh[i]<-price[[pair]]$BaseLow[i]<-NA
+          price[[pair]]$RallyDropBase[i]<-ifelse(price[[pair]]$UpDown[i]=="Up","Rally","Drop")
+          if (!is.na(price[[pair]]$LegBase[i-1]) & price[[pair]]$LegBase[i-1]=="Leg" & 
+              price[[pair]]$UpDown[i-1]!=price[[pair]]$UpDown[i]) {
+            price[[pair]]$Formation[i]<-ifelse(price[[pair]]$UpDown[i]=="Up","ReversalUp","ReversalDown")
+            price[[pair]]$LegBaseRange[i]<-ifelse(price[[pair]]$UpDown[i]=="Up",mult*(min(price[[pair]]$Low[c(i,i-1)])-price[[pair]]$Open[i-1]),
+                                          mult*(max(price[[pair]]$High[c(i,i-1)])-price[[pair]]$Open[i-1]))
+            price[[pair]]$LegBaseRatio[i]<-mult*(price[[pair]]$High[i]-price[[pair]]$Low[i])/price[[pair]]$LegBaseRange[i]
+          } else if (sum(price[[pair]]$LegBase=="Base",na.rm = T)>0) {
+            ind<-max(which(price[[pair]]$LegBase=="Base"))
+            price[[pair]]$Formation[i]<-ifelse(!is.na(price[[pair]]$Formation[ind]),paste0(price[[pair]]$Formation[ind],price[[pair]]$RallyDropBase[i]),NA)
+            price[[pair]]$LegBaseRange[i]<-ifelse(price[[pair]]$UpDown[i]=="Up",mult*(price[[pair]]$High[i] - price[[pair]]$Low[ind+1]),
+                                          mult*(price[[pair]]$High[ind+1] - price[[pair]]$Low[i]))
+            price[[pair]]$LegBaseRatio[i]<-mult*(price[[pair]]$High[i]-price[[pair]]$Low[i])/price[[pair]]$LegBaseRange[i]
+          } 
           if (is.na(price[[pair]]$LegBase[i-1])) {
             price[[pair]]$NLegBase[i]<-1
           } else {
@@ -424,7 +475,12 @@ LegBaseCount<-function(price) {
     price$PrevBaseHigh<-price$PrevBaseLow<-NA
     price$LegBase<-NA
     price$NLegBase<-NA
+    price$RallyDropBase<-NA
+    price$LegBaseRange<-NA
+    price$LegBaseRatio<-NA
+    price$Formation<-NA
     price$BaseHigh[1]<-0;price$BaseLow[1]<-1000
+    mult<-ifelse(price$Close[1]/10>1,100,10000)
     #price$PrevBaseHigh[1]<-NA;price$PrevBaseLow[1]<-NA
     #cumsum with a reset
     #ave(df$a, cumsum(c(F, diff(df$a) < 0)), FUN=seq_along) - 1
@@ -434,8 +490,15 @@ LegBaseCount<-function(price) {
         price$LegBase[i]<-"Base"
         price$BaseHigh[i]<-max(price$BaseHigh[i-1],price$High[i],na.rm=T)
         price$BaseLow[i]<-min(price$BaseLow[i-1],price$Low[i],na.rm=T)
-        price$PrevBaseHigh[i]<-price$BaseHigh[i-1]
-        price$PrevBaseLow[i]<-price$BaseLow[i-1]
+        price$RallyDropBase[i]<-"Base"
+        price$LegBaseRange[i]<-mult*(price$BaseHigh[i] - price$BaseLow[i])
+        if (sum(price$LegBase[!is.na(price$LegBase)]=="Leg")>0) {
+          ind<-max(which(price$LegBase=="Leg"))
+          price$PrevBaseHigh[i]<-price$BaseHigh[ind]
+          price$PrevBaseLow[i]<-price$BaseLow[ind]
+          price$Formation[i]<-ifelse(price$UpDown[ind]=="Up","RallyBase","DropBase")
+          price$LegBaseRatio[i]<-mult*(price$High[i]-price$Low[i])/price$LegBaseRange[i]
+        } 
         if (is.na(price$LegBase[i-1])) {
           price$NLegBase[i]<-1
         } else {
@@ -446,16 +509,34 @@ LegBaseCount<-function(price) {
           price$LegBase[i]<-"Base"
           price$BaseHigh[i]<-max(price$BaseHigh[i-1],price$High[i],na.rm=T)
           price$BaseLow[i]<-min(price$BaseLow[i-1],price$Low[i],na.rm=T)
-          price$PrevBaseHigh[i]<-price$BaseHigh[i-1]
-          price$PrevBaseLow[i]<-price$BaseLow[i-1]
-          if (!is.na(price$LegBase[i-1])) {
-            price$NLegBase[i]<-1+ifelse(price$LegBase[i-1]=="Base",price$NLegBase[i-1],0)
+          price$RallyDropBase[i]<-"Base"
+          price$LegBaseRange[i]<-mult*(price$BaseHigh[i] - price$BaseLow[i])
+          if (sum(price$LegBase=="Leg",na.rm = T)>0) {
+            ind<-max(which(price$LegBase=="Leg"))
+            price$Formation[i]<-ifelse(price$UpDown[ind]=="Up","RallyBase","DropBase")
+            price$LegBaseRatio[i]<-mult*(price$High[i]-price$Low[i])/price$LegBaseRange[i]
+            price$PrevBaseHigh[i]<-price$BaseHigh[ind]
+            price$PrevBaseLow[i]<-price$BaseLow[ind]
           } 
+          price$NLegBase[i]<-1+price$NLegBase[i-1]
         } else {
           price$LegBase[i]<-"Leg"
           price$PrevBaseHigh[i]<-price$PrevBaseHigh[i-1]
           price$PrevBaseLow[i]<-price$PrevBaseLow[i-1]
-          price$BaseHigh[i]<-price$BaseLow[i]<-NA
+          price$RallyDropBase[i]<-ifelse(price$UpDown[i]=="Up","Rally","Drop")
+          if (!is.na(price$LegBase[i-1]) & price$LegBase[i-1]=="Leg" & 
+              price$UpDown[i-1]!=price$UpDown[i]) {
+            price$Formation[i]<-ifelse(price$UpDown[i]=="Up","ReversalUp","ReversalDown")
+            price$LegBaseRange[i]<-ifelse(price$UpDown[i]=="Up",mult*(min(price$Low[c(i,i-1)])-price$Open[i-1]),
+                                                  mult*(max(price$High[c(i,i-1)])-price$Open[i-1]))
+            price$LegBaseRatio[i]<-mult*(price$High[i]-price$Low[i])/price$LegBaseRange[i]
+          } else if (sum(price$LegBase=="Base",na.rm = T)>0) {
+            ind<-max(which(price$LegBase=="Base"))
+            price$Formation[i]<-ifelse(!is.na(price$Formation[ind]),paste0(price$Formation[ind],price$RallyDropBase[i]),NA)
+            price$LegBaseRange[i]<-ifelse(price$UpDown[i]=="Up",mult*(price$High[i] - price$Low[ind+1]),
+                                          mult*(price$High[ind+1] - price$Low[i]))
+            price$LegBaseRatio[i]<-mult*(price$High[i]-price$Low[i])/price$LegBaseRange[i]
+          } 
           if (!is.na(price$LegBase[i-1])) {
             price$NLegBase[i]<-1+ifelse(price$LegBase[i-1]=="Leg",price$NLegBase[i-1],0)
           } 
@@ -464,7 +545,20 @@ LegBaseCount<-function(price) {
         price$LegBase[i]<-"Leg"
         price$PrevBaseHigh[i]<-price$PrevBaseHigh[i-1]
         price$PrevBaseLow[i]<-price$PrevBaseLow[i-1]
-        price$BaseHigh[i]<-price$BaseLow[i]<-NA
+        price$RallyDropBase[i]<-ifelse(price$UpDown[i]=="Up","Rally","Drop")
+        if (!is.na(price$LegBase[i-1]) & price$LegBase[i-1]=="Leg" & 
+            price$UpDown[i-1]!=price$UpDown[i]) {
+          price$Formation[i]<-ifelse(price$UpDown[i]=="Up","ReversalUp","ReversalDown")
+          price$LegBaseRange[i]<-ifelse(price$UpDown[i]=="Up",mult*(min(price$Low[c(i,i-1)])-price$Open[i-1]),
+                                        mult*(max(price$High[c(i,i-1)])-price$Open[i-1]))
+          price$LegBaseRatio[i]<-mult*(price$High[i]-price$Low[i])/price$LegBaseRange[i]
+        } else if (sum(price$LegBase=="Base",na.rm = T)>0) {
+          ind<-max(which(price$LegBase=="Base"))
+          price$Formation[i]<-ifelse(!is.na(price$Formation[ind]),paste0(price$Formation[ind],price$RallyDropBase[i]),NA)
+          price$LegBaseRange[i]<-ifelse(price$UpDown[i]=="Up",mult*(price$High[i] - price$Low[ind+1]),
+                                        mult*(price$High[ind+1] - price$Low[i]))
+          price$LegBaseRatio[i]<-mult*(price$High[i]-price$Low[i])/price$LegBaseRange[i]
+        } 
         if (is.na(price$LegBase[i-1])) {
           price$NLegBase[i]<-1
         } else {

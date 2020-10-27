@@ -21,6 +21,7 @@ CombineModelData<-function(price) {
     for (pair in names(price)) {
       if (pair==names(price)[1]) { 
         x.price<-price[[pair]]
+        x.price$Pair<-pair
         mult<-ifelse(x.price$Close[1]/10>1,100,10000)
         x.price$Move4<-mult*c(x.price$Close[5:nrow(x.price)]-x.price$Open[5:nrow(x.price)-3],NA,NA,NA,NA)
         x.price$Move3<-mult*c(x.price$Close[4:nrow(x.price)]-x.price$Open[4:nrow(x.price)-2],NA,NA,NA)
@@ -28,6 +29,7 @@ CombineModelData<-function(price) {
         x.price$Move1<-mult*c(x.price$Close[2:nrow(x.price)]-x.price$Open[2:nrow(x.price)],NA)
       } else {
         mult<-ifelse(price[[pair]]$Close[1]/10>1,100,10000)
+        price[[pair]]$Pair<-pair
         price[[pair]]$Move4<-mult*c(price[[pair]]$Close[5:nrow(price[[pair]])]-price[[pair]]$Open[5:nrow(price[[pair]])-3],NA,NA,NA,NA)
         price[[pair]]$Move3<-mult*c(price[[pair]]$Close[4:nrow(price[[pair]])]-price[[pair]]$Open[4:nrow(price[[pair]])-2],NA,NA,NA)
         price[[pair]]$Move2<-mult*c(price[[pair]]$Close[3:nrow(price[[pair]])]-price[[pair]]$Open[3:nrow(price[[pair]])-1],NA,NA)

@@ -172,8 +172,8 @@ HisSpreads <- function(AccountType,Granularity,DayAlign,TimeAlign,Token,Instrume
 HisPrices  <- function(Account,AccountType,Granularity,DayAlign,TimeAlign,
                        Token,Instrument,
                        Start,End,Count){
-  # Account=OA_Ai; AccountType=OA_At;Granularity="M1";DayAlign=0;Token=OA_Ak
-  # Instrument="EUR_USD";Count = NULL; TimeAlign="EDT"
+  # Account=OA_Ai; AccountType=OA_At;Granularity="H4";DayAlign=0;Token=OA_Ak
+  # Instrument="EUR_CAD";Count = NULL; TimeAlign="EDT"
   # OA_F1Px<-as.POSIXct(paste0(as.character(Date-1)," 22:00:00"),tz = "GMT")
   # OA_F2Px<-as.POSIXct(paste0(as.character(Date)," 07:00:00"),tz = "GMT")
   # attr(OA_F1Px, "tzone") <- "America/New_York"
