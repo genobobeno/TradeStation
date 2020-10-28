@@ -1,0 +1,129 @@
+---
+title: "Getting Started With This Code"
+author: "Eugene Geis, BuildAFlame.com"
+output:
+  html_document:
+    df_print: paged
+---
+
+### Getting Started with my R Code for FX Trading Analysis
+
+First, make sure you're starting with a working directory where you downloaded this entire package of files; so set your working directory in the first line below...
+
+```{r,message=FALSE,echo=FALSE,results=FALSE}
+# Set your working directory
+setwd(".")
+
+### Packages called ###
+options(stringsAsFactors = FALSE,scipen=999)
+
+PACK = c("ggplot2","xts","RCurl","jsonlite","httr","stringr","plotly","TTR","quantmod","psych")
+
+### Install packages not already installed ###
+for (i in 1:length(PACK)){
+  if(PACK[i] %in% rownames(installed.packages()) == FALSE) {
+    install.packages(PACK[i],dependencies = TRUE)}
+}
+
+suppressWarnings(suppressMessages(required<-lapply(PACK, require, character.only = TRUE)))
+file.sources = list.files(path = "./R/",pattern="*.R") # Grab the R functions!
+sourced<-sapply(paste0("./R/",file.sources),source,.GlobalEnv)  # Source them!
+# NOTE: You will not see output when message=FALSE. You will still see warnings, etc.
+```
+If the code above ran properly, you should see a snippet of the granularity you can ask for from Oanda's API. Typically, I use M1, M2, M5, M10, M15, M30, H4, D, and W. There is usually not enough tick data outside of the London and US trading sessions to work with anything smaller than M5.
+
+### Tokens and the API
+
+If you want this code to work flawlessly, go get yourself an OANDA account and sign up for the API. You'll need your account number and a token string. The code in this data assumes you have saved them as character objects into two RDS files: 
+1. MyAccount.rds, and 
+2. MyToken.rds 
+
+R looks into the working directory each time you make a call to a function, e.g. `GetPriceData()`; in other words, R will run `readRDS(MyAccount.rds)` and  `readRDS(MyToekn.rds)` each time it makes an API call for the price data. For my code, I have set this up to use my practice account... and I have not uploaded those to github, so you need to go get your own.
+
+
+So let's start with the basics... and hopefully it's the middle of the week so you can compare with your active charts:
+```{r,echo=TRUE,results='hide',out.width = '100%',fig.height=8,fig.width=10}
+suppressWarnings(PlotPair("NZD_JPY",hours = NA,minutes = 30,HoursBack = 24*7 ,vols=4))
+```
+Note: I'm only setting up to pull the eight major currencies and their 28 pairs.
+
+*  So here is your first chart. I've included several addons for my purposes:
+  + At the top is the RSI in bold, a shifted CCI, the ADX(5) and ADX(14)
+  + There is an EMA 8, 13, and 21 overlaid
+  + The volume is each tick is normalized to a striped rectangle with an alpha overlay
+  + Volume is also overlaid in 4 densities
+  + The 3 columns of colors on the right are odd number wick overlays for 30M, 4H, and Daily candles
+  + The light blue lines are major ticks
+  + The occasional gray line is a support or resistance where multiple separated wicks have touched
+  + And lastly, the abbreviations are last four "trend states" 
+
+A note on the columns of bars to the right: these are high probability turning points. The probability of reversal increases when the three bars overlap. When there are no bars along a price range (for example, in the chart above: 69.65-69.75), this is a high probability continuation. 
+  
+#### What are Trend States?
+
+These are trend states:
+![TrendStates](TrendClock.png)
+
+UTS = Up-Trend-Setup
+UTSAB = Up-Trend-Setup-Anchor-Break
+SBDC = Sideways-Bias-Down-Confirmed
+DTNS = Down-Trend-No-Setup
+
+This is a class in itself. We can chat offline if you're interested. For beginners, UTS and DTS are the most advantageous formations as they provide good entries off of pullbacks, usually staying with the trending direction. Also worth noting, any two sequential candles that are in the same direction are collapsed to one candle when isolating a Trend State.
+
+### Trend States
+
+Trend States enable us to get quick views into whether price is in the middle of a trend that is "Impulsive", or occurring on multiple sequential time frames vs. being "Corrective", or in different direction between sequential time frames. A plot that I created to enable this much more quickly is the following:
+
+```{r, echo=TRUE,out.width = '100%',fig.height=8,fig.width=10}
+suppressWarnings(Impulsive())
+```
+
+Font sizes might be rough here if you're on a small screen... but you should get the picture. Looking at the top table: USD_JPY is impulsive and uptrending on three consecutive time frames. A UTS (Up-Trend-Setup) would tell me that I should go open my chart and look for a trade. 
+
+### Analysis Functions
+
+#### PCA
+
+Most importantly, each day I'm looking for strong and weak currencies. In order to pull a picture of strength, I've built a principal component analysis. 
+
+Here's the USD example:
+1. First I need all the pairs with USD 
+2. USD should be in the numerator so inverse EURUSD, GBPUSD, etc.
+3. Scale everything to pips
+4. Run the PCA and pull the first dimension, ensuring eigenvector is positively correlated with currency
+5. Repeat for each other currency
+6. Visualize
+
+And here it is for this morning's London session:
+```{r, echo=TRUE,out.width = '100%',fig.height=8,fig.width=10}
+suppressMessages(IND<-GetIndexes(Price=GetAllPrices(Minutes = 1,LookBackHours = 7),pca.plot = TRUE))
+```
+The S&P fell off a cliff this morning, so risk-off down the line. USD has been oversold, so it's leading the pack.
+
+This visual is cute, but if you're a scalper you need more recent, tighter time-range details. 
+
+#### Momentum
+
+Thus I made the next view:
+```{r,echo=TRUE,out.width = '100%',fig.height=8,fig.width=10}
+suppressMessages(CurrStrength(IND))
+```
+
+The index plot is on the top left. The bottom left is a momentum plot. What is my momentum plot?
+1. I load all 8 indices into a table.
+2. Each index gets a lag 1 `diff()`, and subsequent `diff(diff())`; essentially first and second derivatives.
+3. If I treat each first and second derivative as a 2D orthogonal vector, I can dot product any pair of currencies. Then I can sum ALL of those dot products to create something I'm calling a "Momentum" plot.
+4. This can be done for over 2 time periods (close of lag2, close of lag1, close of current candle), or it can be done over a sum of 3, 4, 5, or more time periods. Here, I'm plotting the overlay of 2, 3, 4, and 5 time periods... scaled.
+
+On the right are "scoreboards." Essentially, I take the dot products of my PCA indexes, and I sort by the largest negative numbers; this gives me what I'm calling the biggest/fastest "movers" on down to the slowest. Movers are at the top, sideways/stagnant pairs are at the bottom. The labels above each graph are the time periods I'm summing (full intervals of candles... close of 3 candles back does *not* count as 3 intervals).
+
+
+
+
+
+
+
+
+
+

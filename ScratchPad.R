@@ -1,9 +1,6 @@
 source("Initialize.R")
 PlotPair("AUD_USD",hours = NA,minutes =15,HoursBack = 40 ,vols=4)
 
-par(mfrow=c(1,1))
-plot(1:1000,1:1000,col=rainbow(1000,start = 1,end=0.6),pch=16)
-
 IND<-GetIndexes(Price=GetAllPrices(Minutes = 2,LookBackHours = 8),pca.plot = TRUE)
 
 for (i in 1:100) {
@@ -40,6 +37,6 @@ CurrStrength(IND)
 
 PlotPair("NZD_JPY",hours = NA,minutes =15,HoursBack = 100 ,vols=4)
 
-
+Impulsive()
 
 

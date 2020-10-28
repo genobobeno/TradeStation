@@ -65,7 +65,7 @@ AllPairsPriceHistory<-function(TimeInSeconds=600,Seconds=15,Minutes=NA,Hours=NA,
 }
 
 
-CheckTimeTicks<-function(t.start,t.stop) {
+CheckTimeTicks<-function(t.start,t.stop,verbose=TRUE) {
   if (class(t.start)[1]=="POSIXct" & class(t.stop)[1]=="POSIXct") {
     if (t.start<t.stop) {
       # print("Pick a Valid Seconds Time value: 5, 10, 15, or 30")
@@ -76,29 +76,29 @@ CheckTimeTicks<-function(t.start,t.stop) {
       MIN<-difftime(t.stop,t.start,units = "mins")
       HRS<-difftime(t.stop,t.start,units = "hours")
       if (SEC>500) {
-        cat("\nSECONDS :: ")
+        if (verbose) cat("\nSECONDS :: ")
         for (s in c(5,10,15,30)) {
           if (SEC>=100*s) {
             cand<-paste0(ifelse(SEC>s*500,500,floor(SEC/s)),": S",s)
-            cat(cand, " || ")
+            if (verbose) cat(cand, " || ")
           }
         }
       }
       if (MIN>=100) {
-        cat("\nMINUTES :: ")
+        if (verbose) cat("\nMINUTES :: ")
         for (m in c(1,2,4,5,10,15,30)) {
           if (MIN>=100*m) {
             cand<-paste0(ifelse(MIN>m*500,500,floor(MIN/m)),": M",m)
-            cat(cand, " || ")
+            if (verbose) cat(cand, " || ")
           }
         }
       }
       if (HRS>=100) {
-        cat("\nHOURS :: ")
+        if (verbose) cat("\nHOURS :: ")
         for (h in c(1,2,3,4,6,8,12)) {
           if (HRS>=100*h) {
             cand<-paste0(ifelse(HRS>h*500,500,floor(HRS/h)),": H",h)
-            cat(cand, " || ")
+            if (verbose) cat(cand, " || ")
           }
         }
       }
@@ -165,7 +165,7 @@ GetAllPrices<-function(Seconds=NA,Minutes=NA,Hours=NA,Days=NA,Weeks=NA,Months=NA
     OA_F1Px<-str_replace(paste0(as.character(Sys.time()-3600*LookBackHours),t.adj)," ","T")
     OA_F2Px<-str_replace(paste0(as.character(Sys.time()),t.adj)," ","T")
   } else if (!is.na(t.start) & !is.na(t.stop)) {
-    if (CheckTimeTicks(t.start=t.start,t.stop=t.stop)) {
+    if (CheckTimeTicks(t.start=t.start,t.stop=t.stop,verbose=FALSE)) {
       OA_F1Px<-str_replace(paste0(as.character(t.start),t.adj)," ","T")
       OA_F2Px<-str_replace(paste0(as.character(t.stop),t.adj)," ","T")
     } else {
@@ -269,7 +269,7 @@ GetPairPrices<-function(Pair,Seconds=NA,Minutes=NA,Hours=NA,
     OA_F1Px<-str_replace(paste0(as.character(Sys.time()-3600*LookBackHours),t.adj)," ","T")
     OA_F2Px<-str_replace(paste0(as.character(Sys.time()),t.adj)," ","T")
   } else if (!is.na(t.start) & !is.na(t.stop)) {
-    if (CheckTimeTicks(t.start=t.start,t.stop=t.stop)) {
+    if (CheckTimeTicks(t.start=t.start,t.stop=t.stop,verbose=FALSE)) {
       OA_F1Px<-str_replace(paste0(as.character(t.start),t.adj)," ","T")
       OA_F2Px<-str_replace(paste0(as.character(t.stop),t.adj)," ","T")
     } else {
@@ -289,7 +289,7 @@ GetPairPrices<-function(Pair,Seconds=NA,Minutes=NA,Hours=NA,
             "NZD_JPY","NZD_CHF",
             "CHF_JPY")) {
     #p<-CPairs[1]
-    cat("Pulling",Pair)
+    #cat("Pulling",Pair)
     OA_In <- Pair
     PRICES<-HisPrices(Account=OA_Ai, AccountType=OA_At,Granularity=OA_Gn,DayAlign=OA_Da,Token=OA_Ak,
                       Instrument=OA_In,Start=OA_F1Px,End=OA_F2Px,Count = NULL, TimeAlign=OA_Ta)
@@ -315,7 +315,7 @@ CollectData<-function(t.start=NA,t.stop=NA) {
   # start and stop
   t.adj<-ifelse(round(as.numeric(`attr<-`(Sys.time(),"tzone","GMT") - 
                                    as.POSIXct(format(Sys.time()),tz="GMT")))==4,"-04:00","-05:00") 
-  if (CheckTimeTicks(t.start=t.start,t.stop=t.stop)) {
+  if (CheckTimeTicks(t.start=t.start,t.stop=t.stop,verbose=FALSE)) {
     OA_F1Px<-str_replace(paste0(as.character(t.start),t.adj)," ","T")
     OA_F2Px<-str_replace(paste0(as.character(t.stop),t.adj)," ","T")
   } else {

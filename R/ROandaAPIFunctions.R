@@ -231,7 +231,7 @@ HisPrices  <- function(Account,AccountType,Granularity,DayAlign,TimeAlign,
   Prices$TimeStamp <- as.POSIXct(strptime(Prices$TimeStamp, "%Y-%m-%d %H:%M:%OS"),
                                  origin="1970-01-01",tz = "UTC")
   attributes(Prices$TimeStamp)$tzone <- TimeAlign
-  print(QueryHistPrec2)
+  #print(QueryHistPrec2)
   return(Prices)
 }
 

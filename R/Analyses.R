@@ -15,7 +15,7 @@ GetIndexes<-function(Price,pca.plot=TRUE,LowerUpper=FALSE,Choices=10,...) {
   # }
   df.Price<-CleanOpen(Price)
   df.Price<-CleanPriceList(df.Price)
-
+  dT<-difftime(df.Price[[1]]$TimeStamp[2],df.Price[[1]]$TimeStamp[1],units = "mins")
   USD<-IndexCurrency("USD",price.list=df.Price,ticker="Close")
   EUR<-IndexCurrency("EUR",price.list=df.Price,ticker="Close")
   GBP<-IndexCurrency("GBP",price.list=df.Price,ticker="Close")
@@ -91,7 +91,7 @@ GetIndexes<-function(Price,pca.plot=TRUE,LowerUpper=FALSE,Choices=10,...) {
   for (i in 1:nrow(BestPairs)) cat(row.names(R)[BestPairs[i,1]],"-",colnames(R)[BestPairs[i,2]],"\t",R[BestPairs[i,1],BestPairs[i,2]],"\n")
   return(list(Ind.df=INDS,Ind.pc=list(USD=USD,EUR=EUR,GBP=GBP,JPY=JPY,CHF=CHF,
                                       CAD=CAD,AUD=AUD,NZD=NZD,Price=df.Price),
-              TimeF=max(df.Price$EUR_CHF$TimeStamp)))
+              TimeF=max(df.Price$EUR_CHF$TimeStamp),Interval=dT))
 }
 
 GetCorrelations<-function(price.list,TopPairs=10) {
@@ -347,7 +347,7 @@ CurrStrength<-function(PCA_INDEX,Windows=c(2:5),plot.momentum=TRUE) {
         par(mar=c(5,0.5,3,0.5))
       }
       dot.df<-as.data.frame(cur.dot[[paste0("Window",s)]])
-      plot(c(0,1),-1.1*range(as.matrix(dot.df[nrow(dot.df),])),type="n",xlab=NA,ylab=NA,xaxt="n",yaxt="n",main=s)
+      plot(c(0,1),-1.1*range(as.matrix(dot.df[nrow(dot.df),])),type="n",xlab=NA,ylab=NA,xaxt="n",yaxt="n",main=paste0(round(s*PCA_INDEX$Interval),"M"))
       #axis(4,at = pretty(-1.1*range(as.matrix(dot.df[nrow(dot.df),]))),labels = pretty(-1.1*range(as.matrix(dot.df[nrow(dot.df),]))))
       rect(xleft = -0.5,
            ybottom = seq(from=-1.25*range(as.matrix(dot.df[nrow(dot.df),]))[2],to = -1.25*range(as.matrix(dot.df[nrow(dot.df),]))[1],length.out = 51)[1:50],
@@ -364,14 +364,14 @@ CurrStrength<-function(PCA_INDEX,Windows=c(2:5),plot.momentum=TRUE) {
 
 
 Impulsive<-function() {
-  pM30<-GetAllPrices(Minutes = 30,LookBackHours = 72)
-  pM30<-LabelThings(pM30)
-  pH4<-GetAllPrices(Hours = 4,LookBackHours = 500)
-  pH4<-LabelThings(pH4)
-  pD<-GetAllPrices(Days = 100)
-  pD<-LabelThings(pD)
   pW<-GetAllPrices(Weeks = 100)
   pW<-LabelThings(pW)
+  pD<-GetAllPrices(Days = 100)
+  pD<-LabelThings(pD)
+  pH4<-GetAllPrices(Hours = 4,LookBackHours = 500)
+  pH4<-LabelThings(pH4)
+  pM30<-GetAllPrices(Minutes = 30,LookBackHours = 72)
+  pM30<-LabelThings(pM30)
   
   p.dir<-sapply(names(pM30),function(x) {
     c(pM30[[x]]$Direction[nrow(pM30[[x]])],
@@ -425,39 +425,39 @@ Impulsive<-function() {
                    x.l=X.Idn[1:(length(X.Idn)-1)],x.r=X.Idn[2:length(X.Idn)],
                    txt=txt.Idn,cols=b.colors.dn))
   }
-  par(mfrow=c(4,1),mar=c(1,1,3,1))
+  par(mfrow=c(4,1),mar=c(1,0,2,0))
   plot(c(0,1),c(0,1),type="n",main="Impulse-30M UPTRENDING",xaxt="n",yaxt="n")
   XY<-getTableXY(1:2,p.dir,p.trends)
   rect(xleft = rep(XY$UP$x.l,length(XY$UP$y.b)),ybottom = rep(XY$UP$y.b,rep(length(XY$UP$x.l),length(XY$UP$y.b))),
        xright = rep(XY$UP$x.r,length(XY$UP$y.b)),ytop = rep(XY$UP$y.t,rep(length(XY$UP$x.l),length(XY$UP$y.b))),col = XY$UP$cols,border = 1)
   text(x = rep((XY$UP$x.l+XY$UP$x.r)/2,length(XY$UP$y.b)),y = rep((XY$UP$y.b+XY$UP$y.t)/2,rep(length(XY$UP$x.l),length(XY$UP$y.b))),
-       labels = c(XY$UP$txt),cex=ifelse(grepl("_",XY$UP$txt) | XY$UP$txt=="UTS" | XY$UP$txt %in% c("30M","4H","D","W"),1.2,1),
+       labels = c(XY$UP$txt),cex=ifelse(grepl("_",XY$UP$txt) | XY$UP$txt=="UTS" | XY$UP$txt %in% c("30M","4H","D","W"),0.9,0.8),
        font=ifelse(XY$UP$txt=="UTS",4,1))
   plot(c(0,1),c(0,1),type="n",main="Impulse-30M DOWNTRENDING",xaxt="n",yaxt="n")
   rect(xleft = rep(XY$DOWN$x.l,length(XY$DOWN$y.b)),ybottom = rep(XY$DOWN$y.b,rep(length(XY$DOWN$x.l),length(XY$DOWN$y.b))),
        xright = rep(XY$DOWN$x.r,length(XY$DOWN$y.b)),ytop = rep(XY$DOWN$y.t,rep(length(XY$DOWN$x.l),length(XY$DOWN$y.b))),col = XY$DOWN$cols,border = 1)
   text(x = rep((XY$DOWN$x.l+XY$DOWN$x.r)/2,length(XY$DOWN$y.b)),y = rep((XY$DOWN$y.b+XY$DOWN$y.t)/2,rep(length(XY$DOWN$x.l),length(XY$DOWN$y.b))),
-       labels = c(XY$DOWN$txt),cex=ifelse(grepl("_",XY$DOWN$txt) | XY$DOWN$txt=="DTS" | XY$DOWN$txt %in% c("30M","4H","D","W"),1.2,1),
+       labels = c(XY$DOWN$txt),cex=ifelse(grepl("_",XY$DOWN$txt) | XY$DOWN$txt=="DTS" | XY$DOWN$txt %in% c("30M","4H","D","W"),0.9,0.8),
        font=ifelse(XY$DOWN$txt=="DTS",4,1))
   plot(c(0,1),c(0,1),type="n",main="Impulse-4H UPTRENDING",xaxt="n",yaxt="n")
   XY<-getTableXY(2:3,p.dir,p.trends)
   rect(xleft = rep(XY$UP$x.l,length(XY$UP$y.b)),ybottom = rep(XY$UP$y.b,rep(length(XY$UP$x.l),length(XY$UP$y.b))),
        xright = rep(XY$UP$x.r,length(XY$UP$y.b)),ytop = rep(XY$UP$y.t,rep(length(XY$UP$x.l),length(XY$UP$y.b))),col = XY$UP$cols,border = 1)
   text(x = rep((XY$UP$x.l+XY$UP$x.r)/2,length(XY$UP$y.b)),y = rep((XY$UP$y.b+XY$UP$y.t)/2,rep(length(XY$UP$x.l),length(XY$UP$y.b))),
-       labels = c(XY$UP$txt),cex=ifelse(grepl("_",XY$UP$txt) | XY$UP$txt=="UTS" | XY$UP$txt %in% c("30M","4H","D","W"),1.2,1),
+       labels = c(XY$UP$txt),cex=ifelse(grepl("_",XY$UP$txt) | XY$UP$txt=="UTS" | XY$UP$txt %in% c("30M","4H","D","W"),0.9,0.8),
        font=ifelse(XY$UP$txt=="UTS",4,1))
   plot(c(0,1),c(0,1),type="n",main="Impulse-4H DOWNTRENDING",xaxt="n",yaxt="n")
   rect(xleft = rep(XY$DOWN$x.l,length(XY$DOWN$y.b)),ybottom = rep(XY$DOWN$y.b,rep(length(XY$DOWN$x.l),length(XY$DOWN$y.b))),
        xright = rep(XY$DOWN$x.r,length(XY$DOWN$y.b)),ytop = rep(XY$DOWN$y.t,rep(length(XY$DOWN$x.l),length(XY$DOWN$y.b))),col = XY$DOWN$cols,border = 1)
   text(x = rep((XY$DOWN$x.l+XY$DOWN$x.r)/2,length(XY$DOWN$y.b)),y = rep((XY$DOWN$y.b+XY$DOWN$y.t)/2,rep(length(XY$DOWN$x.l),length(XY$DOWN$y.b))),
-       labels = c(XY$DOWN$txt),cex=ifelse(grepl("_",XY$DOWN$txt) | XY$DOWN$txt=="DTS" | XY$DOWN$txt %in% c("30M","4H","D","W"),1.2,1),
+       labels = c(XY$DOWN$txt),cex=ifelse(grepl("_",XY$DOWN$txt) | XY$DOWN$txt=="DTS" | XY$DOWN$txt %in% c("30M","4H","D","W"),0.9,0.8),
        font=ifelse(XY$DOWN$txt=="DTS",4,1))
   
   Impulse30MUp=p.trends[,apply(p.dir,2,function(x) all(x[1:2]=="Up"))]
   Impulse30MDown=p.trends[,apply(p.dir,2,function(x) all(x[1:2]=="Down"))]
   Impulse4HUp=p.trends[,apply(p.dir,2,function(x) all(x[2:3]=="Up"))]
   Impulse4HDown=p.trends[,apply(p.dir,2,function(x) all(x[2:3]=="Down"))]
-  par(mar=c(5,4,3,3),mfrow=c(1,1))
+  par(mar=c(5,4,3,3),mfrow=c(1,1),cex=1)
   list(Impulse30MUp=Impulse30MUp,
        Impulse30MDown=Impulse30MDown,
        Impulse4HUp=Impulse4HUp,

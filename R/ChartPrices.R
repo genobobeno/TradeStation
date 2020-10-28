@@ -2,7 +2,7 @@ PlotPair<-function(pair,minutes=2,HoursBack=18,SR=TRUE,hours=NA,vols=6,plot.ufo=
   #pair="GBP_USD";minutes=NA;HoursBack=2000;SR=TRUE;hours=4;vols=4
   t.Start<-Sys.time()-HoursBack*3600
   t.Stop<-Sys.time() #-24*7.5*3600
-  CheckTimeTicks(t.start = t.Start,t.stop = t.Stop)
+  #CheckTimeTicks(t.start = t.Start,t.stop = t.Stop)
   if (!is.na(minutes)) {
     df.Price<-GetPairPrices(Pair=pair,t.start = t.Start,t.stop = t.Stop, Minutes = minutes)
   } else if (!is.na(hours)) {
@@ -10,17 +10,17 @@ PlotPair<-function(pair,minutes=2,HoursBack=18,SR=TRUE,hours=NA,vols=6,plot.ufo=
   }
   ############################################
   #pair<-names(df.Price)[1]
-  JW<-CleanOpen(df.Price)
+  suppressMessages(JW<-CleanOpen(df.Price))
   cat("\nCleaned")
-  JW<-LabelUpDown(price=JW,multiple.pairs = FALSE)
+  suppressWarnings(JW<-LabelUpDown(price=JW,multiple.pairs = FALSE))
   cat(" : Labeled")
-  JW<-LegBaseCount(price=JW)
+  suppressMessages(JW<-LegBaseCount(price=JW))
   cat(" : Counted")
-  JW<-BuildHistory(price=JW)
+  suppressMessages(JW<-BuildHistory(price=JW))
   cat(" : History")
-  JW<-AppendIndicators(price=JW)
+  suppressMessages(JW<-AppendIndicators(price=JW))
   cat(" : Indicators")
-  JW<-AppendFeatures(price=JW)
+  suppressMessages(JW<-AppendFeatures(price=JW))
   cat(" : Features")
   i=nrow(JW)
   DrawChart(PriceData = JW[1:i,],SR=SR,Pair=pair,Vols=vols,PlotUFO=plot.ufo)
@@ -65,7 +65,7 @@ DrawChart<-function(PriceData,SR=TRUE,Pair=NA,Vols=6,PlotUFO=FALSE,PlotADX=TRUE,
     VOLS[[paste0("vol",v)]]<- list(TS=max(ROWS),DENSITY=XY,TICKS=max(TICKS$V2)) #list(TS=PriceData$TimeStamp[max(ROWS)],DENSITY=XY,TICKS=max(TICKS$V2))
   }
   if (is.na(EntryModel)[1] & is.na(ExitModel)[1]) {
-    nf<-layout(matrix(c(1,2),nrow=2,ncol=1),1,c(1,3))
+    nf<-layout(matrix(c(1,2),nrow=2,ncol=1),1,c(2,5))
   } else {
     PriceData$Move4<-mult2*c(PriceData$Close[5:nrow(PriceData)]-PriceData$Open[5:nrow(PriceData)-3],NA,NA,NA,NA)
     PriceData$Move3<-mult2*c(PriceData$Close[4:nrow(PriceData)]-PriceData$Open[4:nrow(PriceData)-2],NA,NA,NA)

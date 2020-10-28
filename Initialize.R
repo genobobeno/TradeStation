@@ -6,6 +6,7 @@ if (Sys.getenv("COMPUTERNAME")=="D2X8CJR2") {
 } else if (Sys.getenv("COMPUTERNAME")=="DESKTOP-3S9QUS6") {
   setwd("D:/Documents/Trading/TradeStation")
 } else {
+  ########## 
   setwd("C:/Users/Eugene/Nextcloud/Documents/Trading/TradeStation/")
 }
 options(stringsAsFactors = FALSE,scipen=999)
@@ -21,16 +22,16 @@ for (i in 1:length(PACK)){
 
 lapply(PACK, require, character.only = TRUE)
 
-source("ROandaAPIFunctions.R")
-source("PullPriceData.R")
-source("DataCleanup.R")
-source("PriceETL.R")
-source("Analyses.R")
-source("CountFunctions.R")
-source("ChartPrices.R")
-source("AddIndicators.R")
-source("CombiningData.R")
-source("ModelPreProcess.R")
-source("WeeklyDataArchive.R")
+source("R/ROandaAPIFunctions.R")
+source("R/PullPriceData.R")
+source("R/DataCleanup.R")
+source("R/PriceETL.R")
+source("R/Analyses.R")
+source("R/CountFunctions.R")
+source("R/ChartPrices.R")
+source("R/AddIndicators.R")
+source("R/CombiningData.R")
+source("R/ModelPreProcess.R")
+source("R/WeeklyDataArchive.R")
 
 
