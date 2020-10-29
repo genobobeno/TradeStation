@@ -10,7 +10,7 @@ output:
 
 First, make sure you're starting with a working directory where you downloaded this entire package of files; so set your working directory in the first line below...
 
-```{r,message=FALSE,echo=FALSE,results=FALSE}
+```{r,message=FALSE,echo=TRUE,results=FALSE}
 # Set your working directory
 setwd(".")
 
@@ -35,10 +35,11 @@ If the code above ran properly, you should see a snippet of the granularity you 
 ### Tokens and the API
 
 If you want this code to work flawlessly, go get yourself an OANDA account and sign up for the API. You'll need your account number and a token string. The code in this data assumes you have saved them as character objects into two RDS files: 
+
 1. MyAccount.rds, and 
 2. MyToken.rds 
 
-R looks into the working directory each time you make a call to a function, e.g. `GetPriceData()`; in other words, R will run `readRDS(MyAccount.rds)` and  `readRDS(MyToekn.rds)` each time it makes an API call for the price data. For my code, I have set this up to use my practice account... and I have not uploaded those to github, so you need to go get your own.
+R looks into the working directory each time you make a call to a function, e.g. `GetPriceData()`; in other words, R will run `readRDS(MyAccount.rds)` and  `readRDS(MyToken.rds)` each time it makes an API call for the price data. For my code, I have set this up to use my practice account... and I have not uploaded those to github, so you need to go get your own.
 
 
 So let's start with the basics... and hopefully it's the middle of the week so you can compare with your active charts:
@@ -64,10 +65,11 @@ A note on the columns of bars to the right: these are high probability turning p
 These are trend states:
 ![TrendStates](TrendClock.png)
 
-UTS = Up-Trend-Setup
-UTSAB = Up-Trend-Setup-Anchor-Break
-SBDC = Sideways-Bias-Down-Confirmed
-DTNS = Down-Trend-No-Setup
+* Examples of Trend States
+  + UTS = Up-Trend-Setup
+  + UTSAB = Up-Trend-Setup-Anchor-Break
+  + SBDC = Sideways-Bias-Down-Confirmed
+  + DTNS = Down-Trend-No-Setup
 
 This is a class in itself. We can chat offline if you're interested. For beginners, UTS and DTS are the most advantageous formations as they provide good entries off of pullbacks, usually staying with the trending direction. Also worth noting, any two sequential candles that are in the same direction are collapsed to one candle when isolating a Trend State.
 
@@ -75,11 +77,11 @@ This is a class in itself. We can chat offline if you're interested. For beginne
 
 Trend States enable us to get quick views into whether price is in the middle of a trend that is "Impulsive", or occurring on multiple sequential time frames vs. being "Corrective", or in different direction between sequential time frames. A plot that I created to enable this much more quickly is the following:
 
-```{r, echo=TRUE,out.width = '100%',fig.height=8,fig.width=10}
+```{r, echo=TRUE,out.width = '100%',fig.height=8,fig.width=10,results=FALSE}
 suppressWarnings(Impulsive())
 ```
 
-Font sizes might be rough here if you're on a small screen... but you should get the picture. Looking at the top table: USD_JPY is impulsive and uptrending on three consecutive time frames. A UTS (Up-Trend-Setup) would tell me that I should go open my chart and look for a trade. 
+Font sizes might be rough here if you're on a small screen... but you should get the picture. Looking at the top table: USD_CAD is impulsive and uptrending on three consecutive time frames. When there is an UTS (Up-Trend-Setup), it would tell me that I should go open my chart and look for a trade. In the 4H time frame, the GBP_CAD UTS would work and I should look for a setup on the 30M timeframe, if I'm following Master Wong's Setup rules.
 
 ### Analysis Functions
 
@@ -88,6 +90,7 @@ Font sizes might be rough here if you're on a small screen... but you should get
 Most importantly, each day I'm looking for strong and weak currencies. In order to pull a picture of strength, I've built a principal component analysis. 
 
 Here's the USD example:
+
 1. First I need all the pairs with USD 
 2. USD should be in the numerator so inverse EURUSD, GBPUSD, etc.
 3. Scale everything to pips
@@ -97,9 +100,11 @@ Here's the USD example:
 
 And here it is for this morning's London session:
 ```{r, echo=TRUE,out.width = '100%',fig.height=8,fig.width=10}
-suppressMessages(IND<-GetIndexes(Price=GetAllPrices(Minutes = 1,LookBackHours = 7),pca.plot = TRUE))
+suppressMessages(IND<-GetIndexes(Price=GetAllPrices(Minutes = 1,LookBackHours = 12),pca.plot = TRUE))
 ```
-The S&P fell off a cliff this morning, so risk-off down the line. USD has been oversold, so it's leading the pack.
+The S&P is still falling this morning, so risk-off down the line. 
+
+There is also some output here. The first matrix is a correlation matrix that shows overall correlation of the indexes along with a correlation to the entire market (ALL). The next line of correlations lists the order in which they're correlated with the OVERALL movement of the entire market. For example, the currency that is STRONGEST and moving today's market is the JPY, closely followed by the USD. The currency that was the WEAKEST in today's market was the AUD.
 
 This visual is cute, but if you're a scalper you need more recent, tighter time-range details. 
 
@@ -111,6 +116,7 @@ suppressMessages(CurrStrength(IND))
 ```
 
 The index plot is on the top left. The bottom left is a momentum plot. What is my momentum plot?
+
 1. I load all 8 indices into a table.
 2. Each index gets a lag 1 `diff()`, and subsequent `diff(diff())`; essentially first and second derivatives.
 3. If I treat each first and second derivative as a 2D orthogonal vector, I can dot product any pair of currencies. Then I can sum ALL of those dot products to create something I'm calling a "Momentum" plot.
